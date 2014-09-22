@@ -1,0 +1,901 @@
+<!DOCTYPE html PUBLIC "-//W3C//dtD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/dtD/xhtml1-transitional.dtd">
+<!-- saved from url=(0041)http://www.2cto.com/kf/201207/139798.html -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=GBK">
+
+<link rel="stylesheet" href="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/article.css" type="text/css">
+
+<link href="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/dialog.css" rel="stylesheet" type="text/css">
+<title>深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟</title>
+<meta name="keywords" content="深入,Log4J,源码">
+<meta name="description" content="LoggerRepository从字面上理解，它是一个Logger的容器，它会创建并缓存Logger实例，从而具有相同名字的Logger实例不会多次创建，以提高性能。它的这种特性有点类似Spring的IOC概念。Log4J支持两种配置文件：prop...">
+<script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/jquery.min.js"></script>
+<script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/jquery.sgallery.js"></script>
+<script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/search_common.js"></script>
+<script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/m.js"></script>
+<script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/json.js"></script><link href="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/bdsstyle.css" rel="stylesheet" type="text/css"><script type="text/javascript" charset="UTF-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/wgdmncheck.php"></script><script type="text/javascript" charset="UTF-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/webpv.php"></script><script src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/logger.js"></script><script type="text/javascript" charset="UTF-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/wgcheckv1.php"></script></head><body><iframe frameborder="0" style="display: none;"></iframe><div id="bdshare_s" style="display: block;"><iframe id="bdsIfr" style="position:absolute;display:none;z-index:9999;" frameborder="0"></iframe><div id="bdshare_l" style="display: none;"><div id="bdshare_l_c"><h6>分享到</h6><ul><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_mshare mshare">一键分享</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_qzone qqkj">QQ空间</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_tsina xlwb">新浪微博</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_bdysc bdysc">百度云收藏</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_renren rrw">人人网</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_tqq txwb">腾讯微博</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_bdxc bdxc">百度相册</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_kaixin001 kxw">开心网</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_tqf txpy">腾讯朋友</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_tieba bdtb">百度贴吧</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_douban db">豆瓣网</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_tsohu shwb">搜狐微博</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_bdhome bdhome">百度新首页</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_sqq sqq">QQ好友</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_thx thx">和讯微博</a></li><li><a href="http://www.2cto.com/kf/201207/139798.html#" class="bds_more">更多...</a></li></ul><p><a href="http://www.2cto.com/kf/201207/139798.html#" class="goWebsite">百度分享</a></p></div></div></div><div id="BAIDU_DUP_wrapper_745777_0"></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom"></script><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/fixed7o.js"></script>
+<script language="javascript" type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/dialog.js"></script>
+<script language="javascript" type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/syntaxhighlighter.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/XRegExp.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shCore.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushBash.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushCpp.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushCSharp.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushCss.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushDelphi.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushDiff.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushGroovy.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushJava.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushJScript.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushPhp.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushPlain.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushPython.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushRuby.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushScala.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushSql.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushVb.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushXml.js"></script><script type="text/javascript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shBrushPerl.js"></script>
+<link type="text/css" rel="stylesheet" href="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shCore.css">
+<link type="text/css" rel="stylesheet" href="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/shThemeDefault.css">
+<script type="text/javascript">SyntaxHighlighter.all();</script>
+
+
+
+
+
+<div class="line_top_box">
+	<dl class="top_box_left">
+		<dd class="left_logo"><a href="http://www.2cto.com/"></a></dd>
+		<dd class="left_menu_link">
+																<a class="Channel" href="http://www.2cto.com/News/">资讯</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/Article/">安全</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://bbs.2cto.com/">论坛</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/Soft/">下载</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://book.2cto.com/">读书</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/kf/">程序开发</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/database/">数据库</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/os/">系统</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/net/">网络</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/ebook/">电子书</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://zz.2cto.com/">站长学院</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/ym/">源码</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/QQ/">QQ</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://space.2cto.com/">专栏</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/px/">考试</a>&nbsp;|&nbsp;
+													<a class="Channel" href="http://www.2cto.com/shouce/">手册</a>&nbsp;|&nbsp;
+														</dd>
+	</dl>
+</div>
+<div class="line_top_lmbox">
+	<dl class="lmpic"></dl>
+	<dl class="lmlinkbox"><dd>
+										<a class="Channel" href="http://www.2cto.com/kf/ware/">软件开发</a>|
+							<a class="Channel" href="http://www.2cto.com/kf/qianduan/">web前端</a>|
+							<a class="Channel" href="http://www.2cto.com/kf/web/">Web开发</a>|
+							<a class="Channel" href="http://www.2cto.com/kf/yidong/">移动开发</a>|
+							<a class="Channel" href="http://www.2cto.com/kf/all/">综合编程</a>|
+								</dd></dl>
+	<dl class="LoginBox"><dd><script type="text/javascript">document.write('<iframe src="http://www.2cto.com/index.php?m=member&c=index&a=mini&forward='+encodeURIComponent(location.href)+'&siteid=1" allowTransparency="true"  width="150" height="32" frameborder="0" scrolling="no"></iframe>')</script><iframe src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/index(1).htm" allowtransparency="true" width="150" height="32" frameborder="0" scrolling="no"></iframe></dd></dl>
+</div>
+<div class="divline8"></div>
+<div class="tadv">
+
+<a target="_blank" href="http://vip.2cto.com/"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/980-80.gif" width="980" height="90"></a>
+<!-- 广告位：顶部banner -->
+<script type="text/javascript">BAIDU_CLB_fillSlot("298612");</script><div id="BAIDU_DUP_wrapper_298612_0"></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(1)"></script><div style="padding-top:0px;width:980px;margin:auto;padding-bottom:0px;clear:both;overflow:hidden">
+<a target="_blank" href="http://www.2cto.com/peixun2014/luxiang/"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/erqilx.gif" width="980" height="80"></a>
+</div>
+
+</div>
+
+
+<div class="divline8"></div>
+<div class="it165_box">
+	<div class="box_left">
+		
+		<dl class="box_p">
+			<dd class="pRight"><a href="http://www.2cto.com/">首页</a><span> &gt; </span><a href="http://www.2cto.com/kf/">程序开发</a> &gt; <a href="http://www.2cto.com/kf/ware/">软件开发</a> &gt; <a href="http://www.2cto.com/kf/ware/Java/">Java</a> &gt;  正文</dd>
+			<script type="text/javascript">BAIDU_CLB_fillSlot("703722");</script><div id="BAIDU_DUP_wrapper_703722_0"></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(2)"></script><form action="http://so.2cto.com/cse/search" target="_blank">
+<dd class="pRSearch">
+<input name="s" type="hidden" value="11831876334997631217">
+<input type="submit" value=" "></dd>
+<dd class="pRKeyWork"><input id="Keyword" name="q" type="text"></dd>
+</form>
+			</dl>
+		<dl class="box_t"><dd>深入Log4J源码之LoggerRepository和Configurator</dd></dl>
+																										<dl class="box_INFO">
+			<dd class="frinfo line_blue">2012-07-10 10:03:07  &nbsp;&nbsp;&nbsp;&nbsp;<a style="font-weight:bold;padding:5px 0px 5px 20px;background:url(&#39;http://www.2cto.com/statics/images/icon/user_comment.png&#39;) left center no-repeat" href="http://www.2cto.com/kf/201207/139798.html#comment_iframe">我来说两句&nbsp;</a>&nbsp;&nbsp;  &nbsp;&nbsp;  </dd>
+			<dd class="frsize line_blue">
+			<span id="favorite">
+				<a href="javascript:;" onclick="add_favorite(&#39;深入Log4J源码之LoggerRepository和Configurator&#39;);" class="t6">收藏</a>
+			</span>&nbsp;&nbsp;
+				<a target="_blank" href="http://www.2cto.com/index.php?m=member&c=content&a=publish&modid=1&siteid=1"><img border="0" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/dl.jpg">我要投稿</a>
+			</dd>
+			
+		</dl>
+		<dl class="box_body" id="fontzoom"><dd id="Article">
+		<p>LoggerRepository从字面上理解，它是一个Logger的容器，它会创建并缓存Logger实例，从而具有相同名字的Logger实例不会多次创建，以提高性能。它的这种特性有点类似Spring的IOC概念。Log4J支持两种配置文件：properties文件和xml文件。Configurator解析配置文件，并将解析后的信息添加到LoggerRepository中。LogManager最终将LoggerRepository和Configurator整合在一起。</p>
+<p>LoggerRepository接口</p>
+<p>LoggerRepository是一个Logger的容器，它负责创建、缓存Logger实例，同时它也维护了Logger之间的关系，因为在Log4J中，所有Logger都组装成以RootLogger为根的一棵树，树的层次由Logger的Name来决定，其中以’.’分隔。</p>
+<p>除了做为一个Logger容器，它还有一个Threshold属性，用于过滤所有在Threshold级别以下的日志。以及其他和Logger操作相关的方法和属性。</p>
+<p>LoggerRepository的接口定义如下：</p>
+<p>&nbsp;1 public interface LoggerRepository {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; public void addHierarchyEventListener(HierarchyEventListener listener);<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; boolean isDisabled(int level);<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; public void setThreshold(Level level);<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp; public void setThreshold(String val);<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp; public void emitNoAppenderWarning(Category cat);<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp; public Level getThreshold();<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; public Logger getLogger(String name);<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; public Logger getLogger(String name, LoggerFactory factory);<br>
+10&nbsp;&nbsp;&nbsp;&nbsp; public Logger getRootLogger();<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; public abstract Logger exists(String name);<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; public abstract void shutdown();<br>
+13&nbsp;&nbsp;&nbsp;&nbsp; public Enumeration getCurrentLoggers();<br>
+14&nbsp;&nbsp;&nbsp;&nbsp; public abstract void fireAddAppenderEvent(Category logger, Appender appender);<br>
+15&nbsp;&nbsp;&nbsp;&nbsp; public abstract void resetConfiguration();<br>
+16 }<br>
+&nbsp;</p>
+<p>Hierarchy类</p>
+<p>Hierarchy是Log4J中默认对LoggerRepository的实现类，它用于表达其内部的Logger是以层次结构存储的。在对LoggerRepository接口的实现中，getLogger()方法是其最核心的实现，因而首先从这个方法开始。</p>
+<p>Hierarchy中用一个Hashtable来存储所有Logger实例，它以CategoryKey作为key，Logger作为value，其中CategoryKey是对Logger中Name字符串的封装，之所以要引入这个类是出于性能考虑，因为它会缓存Name字符串的hash code，这样在查找过程中计算hash code时就可以直接取得而不用每次都计算。</p>
+<p>&nbsp;1 class CategoryKey {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; String name;<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; int hashCache;<br>
+&nbsp;4<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp; CategoryKey(String name) {<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; this.name = name;<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hashCache = name.hashCode();<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; final public int hashCode() {<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return hashCache;<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; final public boolean equals(Object rArg) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (this == rArg)<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return true;<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (rArg != null &amp;&amp; CategoryKey.class == rArg.getClass())<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return name.equals(((CategoryKey) rArg).name);<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return false;<br>
+19&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+20 }<br>
+getLogger()方法中有一个重载函数提供LoggerFactory接口，它用于没有在LoggerRepository中找到Logger实例时创建相应的Logger实例，默认实现直接创建一个Logger实例，用户可以通过自定义LoggerFactory实现创建自己的Logger实例。</p>
+<p>1 public interface LoggerFactory {<br>
+2&nbsp;&nbsp;&nbsp;&nbsp; public Logger makeNewLoggerInstance(String name);<br>
+3 }<br>
+4 class DefaultCategoryFactory implements LoggerFactory {<br>
+5&nbsp;&nbsp;&nbsp;&nbsp; public Logger makeNewLoggerInstance(String name) {<br>
+6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return new Logger(name);<br>
+7&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+8 }<br>
+getLogger()方法首先根据传入name创建CategoryKey实例，而后从缓存ht字段中查找：</p>
+<p>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 如果找到对应的Logger实例，则直接返回该实例。</p>
+<p>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 如果没有找到任何实例，则使用LoggerFactory创建新的Logger实例，并将该实例缓存到ht集合中，同时更新新创建Logger实例的parent属性。更新parent属性最简单的做法是从后往前以’.’为分隔符截取字符串，使用截取后的字符串从ht集合中查找是否存在Logger实例，如果存在，则新创建的Logger实例的parent即为找到的实例，若在整个遍历过程中都没有找到相应的parent实例，则其parent实例为root。然而如果一个“x.y.z.w”Logger起初的parent设置为root，而后出现“x.y.z”Logger实例，那么就需要更新“x.y.z.w”Logger的parent为“x.y.z”Logger实例，此时就会遇到一个如何找到在集合中已经存在的“x.y.z”Logger实例子节点的问题。当然一种简单的做法是遍历ht集合中所有实例，判断那个实例是不是“x.y.z”Logger实例的子节点，是则更新其parent节点。由于每次的遍历会引起一些性能问题，因而Log4J使用ProvisionNode事先将所有的可能相关的子节点保存起来，并将ProvisionNode实例添加到ht集合中，这样只要找到对应的ProvisionNode实例，就可以找到所有相关的子节点了。比如对“x.y.z.w”Logger实例，它会产生三个ProvisionNode实例（当然如果相应的实例已经存在，则直接添加而无需创建，另外，如果相应节点已经是Logger实例，那么将“x.y.z.w”Logger实例的parent直接指向它即可）：ProvisionNode(“x”), ProvisionNode(“x.y”), ProvisionNode(“x.y.z”)，他们都存储了“x.y.z.w”Logger实例作为其子节点。</p>
+<p>&nbsp;1 class ProvisionNode extends Vector {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; ProvisionNode(Logger logger) {<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; super();<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; this.addElement(logger);<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;6 }<br>
+&nbsp;7 final private void updateParents(Logger cat) {<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; String name = cat.name;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; int length = name.length();<br>
+10&nbsp;&nbsp;&nbsp;&nbsp; boolean parentFound = false;<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; // if name = "x.y.z.w", loop thourgh "x.y.z", "x.y" and "x"<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; for (int i = name.lastIndexOf('.', length - 1); i &gt;= 0; i = name<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .lastIndexOf('.', i - 1)) {<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String substr = name.substring(0, i);<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CategoryKey key = new CategoryKey(substr);<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Object o = ht.get(key);<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (o == null) {<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ProvisionNode pn = new ProvisionNode(cat);<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ht.put(key, pn);<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else if (o instanceof Category) {<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; parentFound = true;<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cat.parent = (Category) o;<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break; // no need to update the ancestors of the closest<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ancestor<br>
+25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else if (o instanceof ProvisionNode) {<br>
+26&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((ProvisionNode) o).addElement(cat);<br>
+27&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+28&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exception e = new IllegalStateException(<br>
+29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "unexpected object type " + o.getClass() + " in ht.");<br>
+30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.printStackTrace();<br>
+31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+32&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+33&nbsp;&nbsp;&nbsp;&nbsp; // If we could not find any existing parents, then link with root.<br>
+34&nbsp;&nbsp;&nbsp;&nbsp; if (!parentFound)<br>
+35&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cat.parent = root;<br>
+36 }<br>
+3.&nbsp;&nbsp; 如果找到的是ProvisionNode实例，首先使用factory创建新的Logger实例，将该实例添加到ht集合中，然后更新找到的ProvisionNode内部所有Logger的parent字段以及新创建Logger的parent字段。更新过程中需要注意ProvisionNode中的Logger实例已经指向了正确的parent了，所以只要更新那些ProvisionNode中Logger实例指向的parent比新创建的Logger本身层次要高的那些parent属性。比如开始插入“x.y.z”Logger实例，而后插入“x.y.z.w”Logger实例，此时ProvisionNode(“x”)认为“x.y.z”Logger实例和“x.y.z.w”Logger实例都是它的子节点，而后插入“x”Logger实例，那么只需要更新“x.y.z”Logger的父节点为“x”Logger实例即可，而不用更新“x.y.z.w”Logger实例的父节点。</p>
+<p>&nbsp;1 final private void updateChildren(ProvisionNode pn, Logger logger) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; final int last = pn.size();<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; for (int i = 0; i &lt; last; i++) {<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Logger l = (Logger) pn.elementAt(i);<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Unless this child already points to a correct (lower) parent,<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // make cat.parent point to l.parent and l.parent to cat.<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (!l.parent.name.startsWith(logger.name)) {<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.parent = l.parent;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; l.parent = logger;<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+12 }<br>
+综合起来，getLogger()方法的实现代码如下：</p>
+<p>&nbsp;1 public Logger getLogger(String name, LoggerFactory factory) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; CategoryKey key = new CategoryKey(name);<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; Logger logger;<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; synchronized (ht) {<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Object o = ht.get(key);<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (o == null) {<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger = factory.makeNewLoggerInstance(name);<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.setHierarchy(this);<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ht.put(key, logger);<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; updateParents(logger);<br>
+11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return logger;<br>
+12&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else if (o instanceof Logger) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return (Logger) o;<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else if (o instanceof ProvisionNode) {<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger = factory.makeNewLoggerInstance(name);<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.setHierarchy(this);<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ht.put(key, logger);<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; updateChildren((ProvisionNode) o, logger);<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; updateParents(logger);<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return logger;<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // It should be impossible to arrive here<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return null; // but let's keep the compiler happy.<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+25&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+26 }<br>
+其他的方法实现则比较简单，对LoggerRepository来说，它也可以像其注册HierarchyEventListener监听器，每当向一个Logger添加或删除Appender，该监听器就会触发。</p>
+<p>&nbsp;1 public interface HierarchyEventListener {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; public void addAppenderEvent(Category cat, Appender appender);<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; public void removeAppenderEvent(Category cat, Appender appender);<br>
+&nbsp;4 }<br>
+&nbsp;5 private Vector listeners;<br>
+&nbsp;6 public void addHierarchyEventListener(HierarchyEventListener listener) {<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp; if (listeners.contains(listener)) {<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.warn("Ignoring attempt to add an existent listener.");<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listeners.addElement(listener);<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+12 }<br>
+13 public void fireAddAppenderEvent(Category logger, Appender appender) {<br>
+14&nbsp;&nbsp;&nbsp;&nbsp; if (listeners != null) {<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int size = listeners.size();<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HierarchyEventListener listener;<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (int i = 0; i &lt; size; i++) {<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listener = (HierarchyEventListener) listeners.elementAt(i);<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listener.addAppenderEvent(logger, appender);<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+21&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+22 }<br>
+23 void fireRemoveAppenderEvent(Category logger, Appender appender) {<br>
+24&nbsp;&nbsp;&nbsp;&nbsp; if (listeners != null) {<br>
+25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int size = listeners.size();<br>
+26&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HierarchyEventListener listener;<br>
+27&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (int i = 0; i &lt; size; i++) {<br>
+28&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listener = (HierarchyEventListener) listeners.elementAt(i);<br>
+29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; listener.removeAppenderEvent(logger, appender);<br>
+30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+31&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+32 }<br>
+Hierarchy中保存了threshold字段，用户可以设置threshold。而对root实例，它在够着Hierarchy时就被指定了。getCurrentLoggers()方法将ht集合中所有的Logger实例取出。shutdown()方法遍历所有Logger实例以及root实例，调用所有附加其上的Appender的close()方法，并将所有Appender实例从Logger中移除，最后触发AppenderRemove事件。resetConfiguration()方法将root字段初始化、调用shutdown()方法移除Logger中的所有Appender、初始化所有Logger实例当不将其从LoggerRepository中移除、清楚rendererMap和throwableRender中的数据。</p>
+<p>RendererSupport接口<br>
+RendererSupport接口支持用户为不同的类设置相应的ObjectRender实例，从而可以从被渲染的类中或许更多的信息而不是默认的调用其toString()方法。</p>
+<p>&nbsp;1 public interface RendererSupport {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; public RendererMap getRendererMap();<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; public void setRenderer(Class renderedClass, ObjectRenderer renderer);<br>
+&nbsp;4 }<br>
+&nbsp;5 Hierarchy类实现了RenderedSupprt接口，而且它的实现也很简单：<br>
+&nbsp;6 RendererMap rendererMap;<br>
+&nbsp;7 public Hierarchy(Logger root) {<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; rendererMap = new RendererMap();<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;<br>
+11 }<br>
+12 public void addRenderer(Class classToRender, ObjectRenderer or) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp; rendererMap.put(classToRender, or);<br>
+14 }<br>
+15 public RendererMap getRendererMap() {<br>
+16&nbsp;&nbsp;&nbsp;&nbsp; return rendererMap;<br>
+17 }<br>
+18 public void setRenderer(Class renderedClass, ObjectRenderer renderer) {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp; rendererMap.put(renderedClass, renderer);<br>
+20 }<br>
+在RendererMap类实现中，它使用Hastable保存被渲染的类实例和相应的ObjectRender实例，在查找一个类是否存在注册的渲染类时，如果它本身没有找到，需要向上尝试其父类和接口是否有注册相应的ObjectRender类，如果都没有找到，则返回默认的ObjectRender。</p>
+<p>&nbsp;1 public ObjectRenderer get(Class clazz) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; ObjectRenderer r = null;<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; for (Class c = clazz; c != null; c = c.getSuperclass()) {<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = (ObjectRenderer) map.get(c);<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (r != null) {<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return r;<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = searchInterfaces(c);<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (r != null)<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return r;<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; return defaultRenderer;<br>
+13 }<br>
+14 ObjectRenderer searchInterfaces(Class c) {<br>
+15&nbsp;&nbsp;&nbsp;&nbsp; ObjectRenderer r = (ObjectRenderer) map.get(c);<br>
+16&nbsp;&nbsp;&nbsp;&nbsp; if (r != null) {<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return r;<br>
+18&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Class[] ia = c.getInterfaces();<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (int i = 0; i &lt; ia.length; i++) {<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; r = searchInterfaces(ia[i]);<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (r != null)<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return r;<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+25&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+26&nbsp;&nbsp;&nbsp;&nbsp; return null;<br>
+27 }<br>
+28 public ObjectRenderer getDefaultRenderer() {<br>
+29&nbsp;&nbsp;&nbsp;&nbsp; return defaultRenderer;<br>
+30 }<br>
+31 public void put(Class clazz, ObjectRenderer or) {<br>
+32&nbsp;&nbsp;&nbsp;&nbsp; map.put(clazz, or);<br>
+33 }<br>
+ThrowableRendererSupport接口<br>
+ThrowableRendererSupport接口用于支持设置和获取ThrowableRenderer，从而用户可以自定义对Throwable对象的渲染。</p>
+<p>1 public interface ThrowableRendererSupport {<br>
+2&nbsp;&nbsp;&nbsp;&nbsp; ThrowableRenderer getThrowableRenderer();<br>
+3&nbsp;&nbsp;&nbsp;&nbsp; void setThrowableRenderer(ThrowableRenderer renderer);<br>
+4 }<br>
+Hierarchy类以属性的方式实现了该接口，因而每个Hierarchy实例只能有一个全局的ThrowableRenderer，而不能像ObjectRender那样为不同的类定义不同的render。当时这种设计也是合理的，因为对Throwable的渲染最主要的就是其栈的渲染，其他的没什么大的不同，而且对栈渲染方式保持相同的格式会比较好。</p>
+<p>&nbsp;1 private ThrowableRenderer throwableRenderer = null;<br>
+&nbsp;2 public Hierarchy(Logger root) {<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; defaultFactory = new DefaultCategoryFactory();<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;6 }<br>
+&nbsp;7 public void setThrowableRenderer(final ThrowableRenderer renderer) {<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; throwableRenderer = renderer;<br>
+&nbsp;9 }<br>
+10 public ThrowableRenderer getThrowableRenderer() {<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; return throwableRenderer;<br>
+12 }<br>
+Configurator接口</p>
+<p>Configurator接口用于定义对配置文件的解析。在Log4J中配置文件解析出来的所有信息都可以放在LoggerRepository中，因而Configurator接口的定义非常简单。</p>
+<p>1 public interface Configurator {<br>
+2&nbsp;&nbsp;&nbsp;&nbsp; public static final String INHERITED = "inherited";<br>
+3&nbsp;&nbsp;&nbsp;&nbsp; public static final String NULL = "null";<br>
+4&nbsp;&nbsp;&nbsp;&nbsp; void doConfigure(URL url, LoggerRepository repository);<br>
+5 }<br>
+Log4J支持两种文件形式的配置文件：properties文件和xml文件，他们风别对应PropertyConfigurator类和DOMConfigurator类。</p>
+<p>PropertyConfigurator类<br>
+PropertyConfigurator类解析properties文件的中的配置信息，可以设置log4j.debug为true以打开Log4J内部的日志信息；另外PropertyConfigurator还支持Linux风格的变量，即所有${variable}形式的变量都会被系统中对应的属性或配置文件内部定义的属性替换（先查找系统中的属性，后查找配置文件内部定义的属性）；但是PropertyConfigurator不支持一些Log4J中的高级功能，如自定义ErrorHandler和定义AsyncAppender等。</p>
+<p>Configurator中最重要的方法是doConfigure()方法，在PropertyConfigurator实现中，首先将配置文件对应的URL读取成Properties对象：</p>
+<p>&nbsp;1 public void doConfigure(java.net.URL configURL, LoggerRepository hierarchy) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; Properties props = new Properties();<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uConn = configURL.openConnection();<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; uConn.setUseCaches(false);<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; istream = uConn.getInputStream();<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; props.load(istream);<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; doConfigure(props, hierarchy);<br>
+10 }<br>
+而后检查是否设置了log4j.debug、log4j.reset、log4j.threshold等属性，如果有则做相应的设置。这里通过OptionConverter.findAndSubst()方法实现属性的查找和变量信息的替换。</p>
+<p>&nbsp;1 public void doConfigure(Properties properties, LoggerRepository hierarchy) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; repository = hierarchy;<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; String value = properties.getProperty(LogLog.DEBUG_KEY);<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; if (value == null) {<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; value = properties.getProperty("log4j.configDebug");<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (value != null)<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.warn("[log4j.configDebug] is deprecated. Use [log4j.debug] instead.");<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; if (value != null) {<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.setInternalDebugging(OptionConverter.toBoolean(value, true));<br>
+11&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; String reset = properties.getProperty(RESET_KEY);<br>
+13&nbsp;&nbsp;&nbsp;&nbsp; if (reset != null &amp;&amp; OptionConverter.toBoolean(reset, false)) {<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hierarchy.resetConfiguration();<br>
+15&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+16&nbsp;&nbsp;&nbsp;&nbsp; String thresholdStr = OptionConverter.findAndSubst(THRESHOLD_PREFIX,<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; properties);<br>
+18&nbsp;&nbsp;&nbsp;&nbsp; if (thresholdStr != null) {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hierarchy.setThreshold(OptionConverter.toLevel(thresholdStr,<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Level) Level.ALL));<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Hierarchy threshold set to ["<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + hierarchy.getThreshold() + "].");<br>
+23&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;<br>
+25 }<br>
+然后分三步解析配置信息：</p>
+<p>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 解析Root Logger配置</p>
+<p>首先找到log4j.rootLogger的值，它以逗号’,’分隔，其中第一个值时root的Level信息，之后是要添加到root的Appender名字。对Level信息，直接设置给root就行。对Appender名字，继续解析。</p>
+<p>&nbsp;1 void parseCategory(Properties props, Logger logger, String optionKey,<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String loggerName, String value) {<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Parsing for [" + loggerName + "] with value=[" + value<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + "].");<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp; StringTokenizer st = new StringTokenizer(value, ",");<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp; if (!(value.startsWith(",") || value.equals(""))) {<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (!st.hasMoreTokens())<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String levelStr = st.nextToken();<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Level token is [" + levelStr + "].");<br>
+11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (INHERITED.equalsIgnoreCase(levelStr)<br>
+12&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; || NULL.equalsIgnoreCase(levelStr)) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (loggerName.equals(INTERNAL_ROOT_NAME)) {<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.warn("The root logger cannot be set to null.");<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.setLevel(null);<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.setLevel(OptionConverter.toLevel(levelStr,<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Level) Level.DEBUG));<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Category " + loggerName + " set to "<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + logger.getLevel());<br>
+24&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+25&nbsp;&nbsp;&nbsp;&nbsp; logger.removeAllAppenders();<br>
+26&nbsp;&nbsp;&nbsp;&nbsp; Appender appender;<br>
+27&nbsp;&nbsp;&nbsp;&nbsp; String appenderName;<br>
+28&nbsp;&nbsp;&nbsp;&nbsp; while (st.hasMoreTokens()) {<br>
+29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appenderName = st.nextToken().trim();<br>
+30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (appenderName == null || appenderName.equals(","))<br>
+31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; continue;<br>
+32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Parsing appender named \"" + appenderName + "\".");<br>
+33&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appender = parseAppender(props, appenderName);<br>
+34&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (appender != null) {<br>
+35&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; logger.addAppender(appender);<br>
+36&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+37&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+38 }<br>
+相同的Appender可以添加到不同的Logger中，因而PropertyConfigurator对Appender做了缓存，如果能从缓存中找到相应的Appender类，则直接返回找到的Appender。</p>
+<p>而后解析以下键值名以及对应类的属性信息：</p>
+<p>log4j.appender.appenderName=…</p>
+<p>log4j.appender.appenderName.layout=…</p>
+<p>log4j.appender.appenderName.errorhandler=…</p>
+<p>log4j.appender.appenderName.filter.filterKey.name=…</p>
+<p>&nbsp;1 Appender parseAppender(Properties props, String appenderName) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; Appender appender = registryGet(appenderName);<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; if ((appender != null)) {<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Appender \"" + appenderName<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + "\" was already parsed.");<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return appender;<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp; String prefix = APPENDER_PREFIX + appenderName;<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp; String layoutPrefix = prefix + ".layout";<br>
+10&nbsp;&nbsp;&nbsp;&nbsp; appender = (Appender) OptionConverter.instantiateByKey(props, prefix,<br>
+11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; org.apache.log4j.Appender.class, null);<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; if (appender == null) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.error("Could not instantiate appender named \""<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + appenderName + "\".");<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return null;<br>
+16&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+17&nbsp;&nbsp;&nbsp;&nbsp; appender.setName(appenderName);<br>
+18&nbsp;&nbsp;&nbsp;&nbsp; if (appender instanceof OptionHandler) {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (appender.requiresLayout()) {<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Layout layout = (Layout) OptionConverter.instantiateByKey(<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; props, layoutPrefix, Layout.class, null);<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (layout != null) {<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appender.setLayout(layout);<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Parsing layout options for \"" + appenderName<br>
+25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + "\".");<br>
+26&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PropertySetter.setProperties(layout, props, layoutPrefix<br>
+27&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + ".");<br>
+28&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("End of parsing for \"" + appenderName + "\".");<br>
+29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; final String errorHandlerPrefix = prefix + ".errorhandler";<br>
+32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String errorHandlerClass = OptionConverter.findAndSubst(<br>
+33&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; errorHandlerPrefix, props);<br>
+34&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (errorHandlerClass != null) {<br>
+35&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ErrorHandler eh = (ErrorHandler) OptionConverter<br>
+36&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .instantiateByKey(props, errorHandlerPrefix,<br>
+37&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ErrorHandler.class, null);<br>
+38&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (eh != null) {<br>
+39&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appender.setErrorHandler(eh);<br>
+40&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Parsing errorhandler options for \""<br>
+41&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + appenderName + "\".");<br>
+42&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; parseErrorHandler(eh, errorHandlerPrefix, props, repository);<br>
+43&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; final Properties edited = new Properties();<br>
+44&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; final String[] keys = new String[] {<br>
+45&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; errorHandlerPrefix + "." + ROOT_REF,<br>
+46&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; errorHandlerPrefix + "." + LOGGER_REF,<br>
+47&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; errorHandlerPrefix + "." + APPENDER_REF_TAG };<br>
+48&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (Iterator iter = props.entrySet().iterator(); iter<br>
+49&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .hasNext();) {<br>
+50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Map.Entry entry = (Map.Entry) iter.next();<br>
+51&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int i = 0;<br>
+52&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (; i &lt; keys.length; i++) {<br>
+53&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (keys[i].equals(entry.getKey()))<br>
+54&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;<br>
+55&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+56&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (i == keys.length) {<br>
+57&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; edited.put(entry.getKey(), entry.getValue());<br>
+58&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+59&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+60&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PropertySetter.setProperties(eh, edited, errorHandlerPrefix<br>
+61&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + ".");<br>
+62&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("End of errorhandler parsing for \""<br>
+63&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + appenderName + "\".");<br>
+64&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+65&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+66&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PropertySetter.setProperties(appender, props, prefix + ".");<br>
+67&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Parsed \"" + appenderName + "\" options.");<br>
+68&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+69&nbsp;&nbsp;&nbsp;&nbsp; parseAppenderFilters(props, appenderName, appender);<br>
+70&nbsp;&nbsp;&nbsp;&nbsp; registryPut(appender);<br>
+71&nbsp;&nbsp;&nbsp;&nbsp; return appender;<br>
+72 }<br>
+2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 解析LoggerFactory配置</p>
+<p>查找log4j.loggerFactory的值，保存创建的LoggerFactory实例，使用log4j.loggerFactory.propName的方式设置LoggerFactory实例的属性。</p>
+<p>&nbsp;1 protected void configureLoggerFactory(Properties props) {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; String factoryClassName = OptionConverter.findAndSubst(<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LOGGER_FACTORY_KEY, props);<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; if (factoryClassName != null) {<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Setting category factory to [" + factoryClassName<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + "].");<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; loggerFactory = (LoggerFactory) OptionConverter<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .instantiateByClassName(factoryClassName,<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LoggerFactory.class, loggerFactory);<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PropertySetter.setProperties(loggerFactory, props, FACTORY_PREFIX<br>
+11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + ".");<br>
+12&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+13 }<br>
+3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 解析非Root Logger和ObjectRender配置</p>
+<p>解析log4j.logger.、log4j.renderer.、log4j.throwableRenderer.等信息。</p>
+<p>另外，PropertyConfigurator还通过PropertyWatchLog类支持每个一段时间检查一次，如果发现配置文件有改动，则自动重新加载配置信息。</p>
+<p>DOMConfigurator类<br>
+DOMConfigurator使用DOM解析所有Log4J配置文件中的元素，并根据DOM中的元素查找对应的RootLogger、Logger、Appender、Layout等模块。另外DOMConfigurator也支持每隔一段时间检查文件是否有修改，若有，则重新载入新修改后的配置文件。这里DOMConfigurator的实现方式和PropertyConfigurator的实现方式类似，不再详细介绍。<a href="http://www.2cto.com/">www.2cto.com</a></p>
+<p>LogManager类</p>
+<p>LogManager将Configurator和LoggerRepository整合在一起，它在初始化的时候找到Log4J配置文件，并且将其解析到LoggerRepository中。</p>
+<p>&nbsp;1 static {<br>
+&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp; Hierarchy h = new Hierarchy(new RootLogger((Level) Level.DEBUG));<br>
+&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp; repositorySelector = new DefaultRepositorySelector(h);<br>
+&nbsp;4&nbsp;&nbsp;&nbsp;&nbsp; String override = OptionConverter.getSystemProperty(<br>
+&nbsp;5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT_INIT_OVERRIDE_KEY, null);<br>
+&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp; if (override == null || "false".equalsIgnoreCase(override)) {<br>
+&nbsp;7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String configurationOptionStr = OptionConverter.getSystemProperty(<br>
+&nbsp;8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DEFAULT_CONFIGURATION_KEY, null);<br>
+&nbsp;9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; String configuratorClassName = OptionConverter.getSystemProperty(<br>
+10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CONFIGURATOR_CLASS_KEY, null);<br>
+11&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; URL url = null;<br>
+12&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (configurationOptionStr == null) {<br>
+13&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; url = Loader.getResource(DEFAULT_XML_CONFIGURATION_FILE);<br>
+14&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (url == null) {<br>
+15&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; url = Loader.getResource(DEFAULT_CONFIGURATION_FILE);<br>
+16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+17&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+18&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {<br>
+19&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; url = new URL(configurationOptionStr);<br>
+20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } catch (MalformedURLException ex) {<br>
+21&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; url = Loader.getResource(configurationOptionStr);<br>
+22&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (url != null) {<br>
+25&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Using URL [" + url<br>
+26&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + "] for automatic log4j configuration.");<br>
+27&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {<br>
+28&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OptionConverter.selectAndConfigure(url,<br>
+29&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; configuratorClassName,<br>
+30&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogManager.getLoggerRepository());<br>
+31&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } catch (NoClassDefFoundError e) {<br>
+32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.warn("Error during default initialization", e);<br>
+33&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+34&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+35&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Could not find resource: ["<br>
+36&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + configurationOptionStr + "].");<br>
+37&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+38&nbsp;&nbsp;&nbsp;&nbsp; } else {<br>
+39&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LogLog.debug("Default initialization of overridden by "<br>
+40&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + DEFAULT_INIT_OVERRIDE_KEY + "property.");<br>
+41&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+42 }<br>
+&nbsp;</p>
+<p>&nbsp;作者：上善若水</p>
+						</dd></dl>
+		<script type="text/javascript">
+		<!--
+		$(function(){
+		  $('#Article img').LoadImage(true, 630, 560,'http://www.2cto.com/statics/images/s_nopic.gif');    
+		})
+		
+		//-->
+		</script>
+	<div id="pages" class="box_body">	</div>
+	<dl style="width:650px;height:100px;padding-top:10px;float:left;padding-left:10px">
+		<dd><script type="text/javascript">BAIDU_CLB_fillSlot("771048");</script><div id="BAIDU_DUP_wrapper_771048_0"><iframe width="640" height="90" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom.htm" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(3)"></script><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/inlayFixed.js"></script></dd>
+	</dl>
+	<dl class="box_Nsc">
+		<dd class="lcopy"><a class="ckcopy" onclick="copyToClipBoard()">点击复制链接 与好友分享!</a><a class="ckhome" href="http://www.2cto.com/">回本站首页</a></dd>
+		<script> 
+		function copyToClipBoard(){ 
+		var clipBoardContent=document.title + '\r\n' + document.location; 
+		clipBoardContent+='\r\n'; 
+		window.clipboardData.setData("Text",clipBoardContent); 
+		alert("恭喜您！复制成功"); 
+		} 
+		</script>
+
+		<div class="Article-Tool">
+                               	  <!-- Baidu Button BEGIN -->
+<div id="bdshare" class="bdshare_t bds_tools get-codes-bdshare"> <span style="float:left">分享到：</span>
+
+<a class="bds_qzone" title="分享到QQ空间" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_tsina" title="分享到新浪微博" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_tqq" title="分享到腾讯微博" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_baidu" title="分享到百度搜藏" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_renren" title="分享到人人网" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_kaixin001" title="分享到开心网" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<a class="bds_tieba" title="分享到百度贴吧" href="http://www.2cto.com/kf/201207/139798.html#"></a>
+<span class="bds_more">更多</span>
+</div>
+<script type="text/javascript" id="bdshare_js" data="type=tools&amp;uid=12732" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/bds_s_v2.js"></script>
+
+<script type="text/javascript">
+var bds_config = {'snsKey':{'tsina':'2386826374','tqq':'5e544a8fdea646c5a5f3967871346eb8'}};
+document.getElementById("bdshell_js").src = "http://bdimg.share.baidu.com/static/js/shell_v2.js?cdnversion=" + Math.ceil(new Date()/3600000)
+</script>
+<!-- Baidu Button END -->
+                                
+	  </div>
+
+		
+		
+		<dd class="bbstt">您对本文章有什么意见或着疑问吗？请到<a href="http://bbs.2cto.com/">论坛讨论</a>您的关注和建议是我们前行的参考和动力&nbsp;&nbsp; </dd>
+	</dl>
+	<dl class="box_NPre">
+		<dd class="TLineX"><strong>上一篇：</strong><a href="http://www.2cto.com/kf/201207/139786.html">常用公共类代码一之数据库的连接</a></dd>
+		<dd><strong>下一篇：</strong><a href="http://www.2cto.com/kf/201207/139800.html">深入Log4J源码之Appender</a></dd>
+	</dl>
+	<dl class="linetb"></dl>
+	<dl class="about"><dd>相关文章</dd></dl>
+				<div class="alistline"><a href="http://www.2cto.com/kf/200609/13609.html" target="blank">深入浅出Java堆的管理--垃圾回收</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/13627.html" target="blank">深入探索CORBA对象生命周期之慨述</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/13674.html" target="blank">Java源码分析：深入探讨Iterator模式</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/13702.html" target="blank">深入浅出Java的访问者模式</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/13835.html" target="blank">Java学习过程应该深入理解的一些重点</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/13912.html" target="blank">Java深入:编写高级 JScript应用代码</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200609/14052.html" target="blank">JAVA基础：深入浅出Java的访问者模式</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/200906/39287.html" target="blank">面向方面 vs 面向对象 4(深入代码)</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/201005/47097.html" target="blank">深入研究Java equals方法</a></div>
+			<div class="alistline"><a href="http://www.2cto.com/kf/201104/88164.html" target="blank">深入了解Java的String</a></div>
+			<dl class="linetb"></dl>
+	<dl style="width:650px;height:70px;padding-top:10px;float:left;padding-left:10px">
+		<dd><script type="text/javascript">BAIDU_CLB_fillSlot("182716");</script><div id="BAIDU_DUP_wrapper_182716_0"><iframe width="640" height="60" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(17).htm" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(4)"></script></dd>
+	</dl>
+
+	<dl style="width:650px;float:left;padding-left:10px">
+		<dd><script type="text/javascript">BAIDU_CLB_fillSlot("517916");</script><div id="BAIDU_DUP_wrapper_517916_0"></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(5)"></script></dd>
+	</dl>
+	<dl class="linetb"></dl>
+	<dl class="about"><dd>图文推荐</dd></dl>
+	<div class="picbox">
+						<dl class="wbox">
+			<dd class="npicbox"><a target="_blank" href="http://www.2cto.com/kf/201311/254467.html"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/thumb_126_90_20131101030734594.png" width="126" height="90" border="0"></a></dd>
+			<dd class="npictext"><a href="http://www.2cto.com/kf/201311/254467.html">使用eclipse JDT c</a></dd>
+		</dl>
+				<dl class="wbox">
+			<dd class="npicbox"><a target="_blank" href="http://www.2cto.com/kf/201310/253286.html"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/thumb_126_90_20131028093044558.jpg" width="126" height="90" border="0"></a></dd>
+			<dd class="npictext"><a href="http://www.2cto.com/kf/201310/253286.html">DAO(Data Access O</a></dd>
+		</dl>
+				<dl class="wbox">
+			<dd class="npicbox"><a target="_blank" href="http://www.2cto.com/kf/201310/253013.html"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/thumb_126_90_20131026101225332.png" width="126" height="90" border="0"></a></dd>
+			<dd class="npictext"><a href="http://www.2cto.com/kf/201310/253013.html">Java常用类库--观察者</a></dd>
+		</dl>
+				<dl class="wbox">
+			<dd class="npicbox"><a target="_blank" href="http://www.2cto.com/kf/201310/252686.html"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/thumb_126_90_20131025092024623.jpg" width="126" height="90" border="0"></a></dd>
+			<dd class="npictext"><a href="http://www.2cto.com/kf/201310/252686.html">jetty的servlet请求路</a></dd>
+		</dl>
+					</div>
+		<dl class="linetb"></dl>
+		<div id="pl" style="float:left;width:650px;padding:10px 10px 0px 10px;overflow:hidden;background-color:white">
+		<iframe src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/uapi.htm" width="100%" height="309" id="comment_iframe" name="comment_iframe" frameborder="0" scrolling="no"></iframe>
+	</div>
+			<dl style="width:650px;float:left;padding-left:10px">
+		<dd><script type="text/javascript">BAIDU_CLB_fillSlot("771057");</script><div id="BAIDU_DUP_wrapper_771057_0"><iframe width="640" height="60" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(15).htm" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(6)"></script></dd>
+	</dl>
+	</div>
+	<div class="box_right">
+		<div style="float:left;width:300px;background:white;padding-left:10px;height:250px">
+			<a target="_blank" href="http://vip.2cto.com/"><img src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/300-250.gif" width="300" height="250"></a></div>
+		<div class="box_right_line"><div class="xline"></div></div>
+		<div class="box_right_box">
+			<dl class="bTitle"><dd onmousemove="m_tab(1)" id="indexW" class="tablinkschecked">排行</dd><dd onmousemove="m_tab(2)" id="hotW" class="tablinkscheck">热门</dd></dl>
+		</div>
+		<div class="box_right_box">
+			<div class="paddingbox">
+				<dl class="index" id="index">
+					<dd class="picline"></dd>
+															<dd class="list">734 | <a target="_blank" title="10种排序算法总结" href="http://www.2cto.com/kf/201109/104886.html">10种排序算法总结</a></dd>
+										<dd class="list">643 | <a target="_blank" title="Eclipse使用入门教程" href="http://www.2cto.com/kf/201202/118313.html">Eclipse使用入门教程</a></dd>
+										<dd class="list">519 | <a target="_blank" title="java中static作用详解" href="http://www.2cto.com/kf/201109/104884.html">java中static作用详解</a></dd>
+										<dd class="list">474 | <a target="_blank" title="Spring定时器时间配置" href="http://www.2cto.com/kf/201109/102657.html">Spring定时器时间配置</a></dd>
+										<dd class="list">356 | <a target="_blank" title="输入一行字符，分别统计出其中英文字母、空格、数字和其它字符的个数。" href="http://www.2cto.com/kf/201202/119452.html">输入一行字符，分别统计出其中英文字母</a></dd>
+										<dd class="list">323 | <a target="_blank" title="SpringMVC中的文件上传" href="http://www.2cto.com/kf/201205/132043.html">SpringMVC中的文件上传</a></dd>
+										<dd class="list">315 | <a target="_blank" title="Java中List转换为数组,数组转List " href="http://www.2cto.com/kf/201204/125820.html">Java中List转换为数组,数组转List </a></dd>
+										<dd class="list">273 | <a target="_blank" title="Java读取txt文件" href="http://www.2cto.com/kf/201107/96812.html">Java读取txt文件</a></dd>
+														</dl>
+				<dl class="index" id="hot" style="display:none">
+					<dd class="picline"></dd>
+															<dd class="list"><a target="_blank" title="10种排序算法总结" href="http://www.2cto.com/kf/201109/104886.html">10种排序算法总结</a></dd>
+										<dd class="list"><a target="_blank" title="Java读取txt文件" href="http://www.2cto.com/kf/201107/96812.html">Java读取txt文件</a></dd>
+										<dd class="list"><a target="_blank" title="java调用webservice实例" href="http://www.2cto.com/kf/201109/103011.html">java调用webservice实例</a></dd>
+										<dd class="list"><a target="_blank" title="java中static作用详解" href="http://www.2cto.com/kf/201109/104884.html">java中static作用详解</a></dd>
+										<dd class="list"><a target="_blank" title="Spring定时器时间配置" href="http://www.2cto.com/kf/201109/102657.html">Spring定时器时间配置</a></dd>
+										<dd class="list"><a target="_blank" title="Struts2实现文件上传 " href="http://www.2cto.com/kf/201202/118589.html">Struts2实现文件上传 </a></dd>
+										<dd class="list"><a target="_blank" title="Eclipse使用入门教程" href="http://www.2cto.com/kf/201202/118313.html">Eclipse使用入门教程</a></dd>
+										<dd class="list"><a target="_blank" title="Java中List转换为数组,数组转List " href="http://www.2cto.com/kf/201204/125820.html">Java中List转换为数组,数组转List </a></dd>
+														</dl>
+			</div>
+			<script type="text/javascript">
+			<!--
+				function m_tab(index)
+				{
+					if (index == 1){
+						document.getElementById("indexW").className = "tablinkschecked";
+						document.getElementById("hotW").className = "tablinkscheck";
+						document.getElementById("index").style.display = "block";
+						document.getElementById("hot").style.display = "none";
+					}
+					else{
+						document.getElementById("hotW").className = "tablinkschecked";
+						document.getElementById("indexW").className = "tablinkscheck";
+						document.getElementById("index").style.display = "none";
+						document.getElementById("hot").style.display = "block";
+					}
+				}
+			//-->
+			</script>
+		</div>
+		<div class="rightlineT"><div class="rxline"></div></div>
+		<div style="float:left;width:300px;background:white;padding-left:10px;height:60px">
+				<!-- 广告位：内容页右侧小广告位 -->
+			<script type="text/javascript">BAIDU_CLB_fillSlot("406189");</script><div id="BAIDU_DUP_wrapper_406189_0"><iframe id="baidu_clb_slot_iframe_406189_0" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟.htm" onload="BAIDU_DUP_CLB_renderFrame(&#39;406189_0&#39;)" width="300" height="60" vspace="0" hspace="0" allowtransparency="true" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border:0; vertical-align:bottom; margin:0; display:block;"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(7)"></script>
+		</div>
+<div class="rightlineT"><div class="rxline"></div></div>
+		<div style="float:left;width:300px;background:white;padding-left:10px;height:80px">
+				<!-- 广告位：内容页右侧小广告位 -->
+			<script type="text/javascript">BAIDU_CLB_fillSlot("703749");</script><div id="BAIDU_DUP_wrapper_703749_0"><iframe id="baidu_clb_slot_iframe_703749_0" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟.htm" onload="BAIDU_DUP_CLB_renderFrame(&#39;703749_0&#39;)" width="300" height="80" vspace="0" hspace="0" allowtransparency="true" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border:0; vertical-align:bottom; margin:0; display:block;"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(8)"></script>
+		</div>
+		<div class="rightlineNo"></div>
+		<div class="box_right_box">
+			<dl class="bTitle borT"><dd class="newarc"></dd></dl>
+		</div>
+		<div class="box_right_box">
+			<div class="paddingbox">
+				<dl class="index">
+					<iframe frameborder="0" name="Iframe1" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/index.htm" width="100%" height="200">
+				您的浏览器不支持嵌入式框架，或者当前配置为不显示嵌入式框架。
+			</iframe>
+				</dl>
+			</div>
+		</div>
+                                <div class="rightlineT"><div class="rxline"></div></div>
+
+		<div style="float:left;width:300px;background:white;padding-left:10px;height:250px"><script type="text/javascript">BAIDU_CLB_fillSlot("182692");</script><div id="BAIDU_DUP_wrapper_182692_0"><iframe id="baidu_clb_slot_iframe_182692_0" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟.htm" onload="BAIDU_DUP_CLB_renderFrame(&#39;182692_0&#39;)" width="300" height="250" vspace="0" hspace="0" allowtransparency="true" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border:0; vertical-align:bottom; margin:0; display:block;"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(9)"></script> </div>
+		<div class="box_right_line"><div class="xline"></div></div>
+		<div class="box_right_box">
+			<dl class="bTitle">
+				<dd onmousemove="m_tabs(1)" id="ArticlesW" class="tablinkschecked">文章</dd>
+				<dd onmousemove="m_tabs(2)" id="DownW" class="tablinkscheck">下载</dd>
+				<dd onmousemove="m_tabs(3)" id="BookW" class="tablinkscheck">读书</dd>
+			</dl>
+		</div>
+		<div class="box_right_box">
+			<div class="paddingbox">
+				<dl class="index" id="Articles">
+					<dd class="picline"></dd>
+															<dd class="list">·&nbsp;<a target="_blank" title="Win2000下关闭无用端口" href="http://www.2cto.com/Article/200410/1.html">Win2000下关闭无用端口</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="禁止非法用户登录综合设置 [win9x篇]" href="http://www.2cto.com/Article/200410/2.html">禁止非法用户登录综合设置 [win9x篇]</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="关上可恶的后门——消除NetBIOS隐患" href="http://www.2cto.com/Article/200410/3.html">关上可恶的后门——消除NetBIOS隐患</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="网络入侵检测系统" href="http://www.2cto.com/Article/200410/4.html">网络入侵检测系统</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="潜伏在Windows默认设置中的陷井" href="http://www.2cto.com/Article/200410/5.html">潜伏在Windows默认设置中的陷井</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="调制解调器的不安全" href="http://www.2cto.com/Article/200410/6.html">调制解调器的不安全</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="构建Windows 2000服务器的安全防护林" href="http://www.2cto.com/Article/200410/7.html">构建Windows 2000服务器的安全防护林</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="SQL Server 2000的安全配置" href="http://www.2cto.com/Article/200410/8.html">SQL Server 2000的安全配置</a></dd>
+														</dl>
+				<dl class="index" id="Down" style="display:none">
+					<dd class="picline"></dd>
+															<dd class="list">·&nbsp;<a target="_blank" title="Windows优化大师注册机源码" href="http://www.2cto.com/soft/200409/53.html">Windows优化大师注册机源码</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="Process Viewer 汉化版" href="http://www.2cto.com/soft/200409/62.html">Process Viewer 汉化版</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="Aspcode动画教程" href="http://www.2cto.com/soft/200409/79.html">Aspcode动画教程</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="WIN 2000服务器防止ICMP数据包攻击教程" href="http://www.2cto.com/soft/200409/128.html">WIN 2000服务器防止ICMP数据包攻击教程</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="实现网络隐身的简单方法" href="http://www.2cto.com/soft/200409/129.html">实现网络隐身的简单方法</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="手工进行克隆帐号" href="http://www.2cto.com/soft/200409/130.html">手工进行克隆帐号</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="用W32DASM破解网页合并器的密码" href="http://www.2cto.com/soft/200409/134.html">用W32DASM破解网页合并器的密码</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="注册表操作动画教程" href="http://www.2cto.com/soft/200409/138.html">注册表操作动画教程</a></dd>
+														</dl>
+				<dl class="index" id="Book" style="display:none">
+					<dd class="picline"></dd>
+															<dd class="list">·&nbsp;<a target="_blank" title="黑客攻防技术宝典：Web实战篇（第2版）" href="http://book.2cto.com/201206/20.html">黑客攻防技术宝典：Web实战篇（第2版）</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="超级网管员——网络安全" href="http://book.2cto.com/201207/43.html">超级网管员——网络安全</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="代码大全（第二版）" href="http://book.2cto.com/201207/64.html">代码大全（第二版）</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="软件之道:软件开发争议问题剖析" href="http://book.2cto.com/201207/68.html">软件之道:软件开发争议问题剖析</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="CSS插件工具箱" href="http://book.2cto.com/201207/78.html">CSS插件工具箱</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="CSS入门经典(第3版)" href="http://book.2cto.com/201207/139.html">CSS入门经典(第3版)</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="C#并行编程高级教程：精通.NET 4 Parallel Extension" href="http://book.2cto.com/201207/169.html">C#并行编程高级教程：精通.NET 4 Pa</a></dd>
+										<dd class="list">·&nbsp;<a target="_blank" title="CMMI+敏捷整合开发" href="http://book.2cto.com/201207/190.html">CMMI+敏捷整合开发</a></dd>
+														</dl>
+			</div>
+			<script type="text/javascript">
+			<!--
+				function m_tabs(index)
+				{
+					if (index == 1){
+						document.getElementById("ArticlesW").className = "tablinkschecked";
+						document.getElementById("DownW").className = "tablinkscheck";
+						document.getElementById("BookW").className = "tablinkscheck";
+						document.getElementById("Articles").style.display = "block";
+						document.getElementById("Down").style.display = "none";
+						document.getElementById("Book").style.display = "none";
+					}
+					else if (index == 2){
+						document.getElementById("ArticlesW").className = "tablinkscheck";
+						document.getElementById("DownW").className = "tablinkschecked";
+						document.getElementById("BookW").className = "tablinkscheck";
+						document.getElementById("Articles").style.display = "none";
+						document.getElementById("Down").style.display = "block";
+						document.getElementById("Book").style.display = "none";
+					}
+					else{
+						document.getElementById("ArticlesW").className = "tablinkscheck";
+						document.getElementById("DownW").className = "tablinkscheck";
+						document.getElementById("BookW").className = "tablinkschecked";
+						document.getElementById("Articles").style.display = "none";
+						document.getElementById("Down").style.display = "none";
+						document.getElementById("Book").style.display = "block";
+					}
+				}
+			//-->
+			</script>
+		</div>
+		<div class="rightlineNo"></div>
+		<div class="box_right_box">
+			<dl class="bTitle borT"><dd class="newdown"></dd></dl>
+		</div>
+		<div class="box_right_box">
+			<div class="paddingbox">
+				<dl class="index">
+															<dd class="picbox"><a target="_blank" class="plink" href="http://www.2cto.com/kf/201301/181639.html"><img class="pic1" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/20130108112638885.png" width="126" height="90" border="0"></a><span><a href="http://www.2cto.com/kf/201301/181639.html">Java中的递归原理分析</a></span></dd>
+															<dd class="picline"></dd>
+															<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201111/111185.html">如何自学java迅速成为java高手</a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201111/111372.html">Java学习这七年  </a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201111/111537.html">一个Java程序员应该掌握的10项技能  </a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201202/118294.html">Java编程语言程序的认识误区  </a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201202/118556.html">java中的接口和抽象类是什么？</a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201204/125818.html">Java中23种经典设计模式详解</a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201206/135296.html">Java静态代码块(static block)调用陷</a></dd>
+										<dd class="list">&#9642;&nbsp;<a target="_blank" href="http://www.2cto.com/kf/201207/141901.html">Hibernate基础：Configuration</a></dd>
+					</dl>
+			</div>
+			<div class="xline"></div>
+		</div>
+		<div class="box_right_line"><div class="xline"></div></div>
+		<div style="float:left;width:300px;background:white;padding-left:10px;height:250px">
+			<script type="text/javascript">BAIDU_CLB_fillSlot("771043");</script><div id="BAIDU_DUP_wrapper_771043_0" width="300px" height="250px" style="z-index: 2147483646;"><iframe id="cproIframe1" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(16).htm" width="300" height="250" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(10)"></script><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/xuanting.js"></script></div>
+		<div class="box_right_line"><div class="xline"></div></div>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+<!--
+function showLogin(){
+	window.art.dialog({id:'Login',iframe:'http://www.2cto.com/index.php?m=member&c=index&a=login&tupe=mini', title:'快捷登陆', width:'450', height:'310', lock:true}, function(){var d = window.art.dialog({id:'Login'}).data.iframe;var form = d.document.getElementById('dosubmit');form.click();return false;}, function(){window.art.dialog({id:'Login'}).close()});void(0);
+}
+function add_favorite(title) {
+		$.getJSON('http://www.2cto.com/api.php?op=add_favorite&title='+encodeURIComponent(title)+'&url='+encodeURIComponent(location.href)+'&'+Math.random()+'&callback=?', function(data){
+			if(data.status==1)	{
+				$("#favorite").html('收藏成功');
+			} else {
+				alert('请登陆');
+				window.location.href='http://home.2cto.com/?forward='+encodeURIComponent(location.href);
+			}
+		});
+	}
+//-->
+</script>
+<script language="JavaScript" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/api.php"></script>
+<!-- 广告位：右侧漂浮 -->
+<script type="text/javascript">BAIDU_CLB_fillSlot("137946");</script><div id="BAIDU_DUP_wrapper_137946_0"></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(11)"></script><div id="cproIframe2002holder" style="padding: 0px; display: block; visibility: visible; border: none; float: none; overflow: hidden; position: fixed; z-index: 2147483646; width: 130px; height: 360px; right: 7px; top: 150px; background: none;"><div id="cproIframe2002CloseBtnWrap" style="position: absolute; top: 275px; left: 0px; cursor: pointer; width: 130px; height: 28px; z-index: 100; opacity: 0; background-color: rgb(153, 153, 153);"></div><div id="cproIframe2002CloseBtn" style="position: absolute; width: 130px; height: 20px; top: 280px; left: 0px; cursor: pointer; color: rgb(255, 255, 255); font-size: 12px; font-family: 微软雅黑; text-align: center; line-height: 20px; background-color: rgb(153, 153, 153);">关闭</div><div style="width: 130px; height: 360px; overflow: hidden;"><div style="display:none">-</div><iframe id="cproIframe2002" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(14).htm" width="130" height="360" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div></div><div id="cproIframe2001holder" style="padding: 0px; display: block; visibility: visible; border: none; float: none; overflow: hidden; position: fixed; z-index: 2147483646; width: 130px; height: 360px; left: 7px; top: 150px; background: none;"><div id="cproIframe2001CloseBtnWrap" style="position: absolute; top: 275px; left: 0px; cursor: pointer; width: 130px; height: 28px; z-index: 100; opacity: 0; background-color: rgb(153, 153, 153);"></div><div id="cproIframe2001CloseBtn" style="position: absolute; width: 130px; height: 20px; top: 280px; left: 0px; cursor: pointer; color: rgb(255, 255, 255); font-size: 12px; font-family: 微软雅黑; text-align: center; line-height: 20px; background-color: rgb(153, 153, 153);">关闭</div><div style="width: 130px; height: 360px; overflow: hidden;"><div style="display:none">-</div><iframe id="cproIframe2001" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(13).htm" width="130" height="360" align="center,center" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" allowtransparency="true"></iframe></div></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/floatad.js"></script>
+
+<div style="width:980px;padding:8px 0px 8px 0px;margin:auto"><script type="text/javascript">BAIDU_CLB_fillSlot("333829");</script><div id="BAIDU_DUP_wrapper_333829_0"><iframe id="baidu_clb_slot_iframe_333829_0" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟.htm" onload="BAIDU_DUP_CLB_renderFrame(&#39;333829_0&#39;)" width="980" height="60" vspace="0" hspace="0" allowtransparency="true" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border:0; vertical-align:bottom; margin:0; display:block;"></iframe></div><script charset="utf-8" src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/ecom(12)"></script></div>
+
+
+<div class="foot">
+<p>
+<a target="_blank" href="http://www.2cto.com/about">关于我们</a> |
+<a target="_blank" href="http://www.2cto.com/about/contact.html">联系我们</a> |
+<a target="_blank" href="http://www.2cto.com/about/ads.html">广告服务</a> |
+<a target="_blank" href="http://www.2cto.com/about/touzi.html">投资合作</a> |
+<a target="_blank" href="http://www.2cto.com/about/Copyright.html">版权申明</a> |
+<a target="_blank" href="http://www.2cto.com/about/faq.html">在线帮助</a> |
+<a target="_blank" href="http://www.2cto.com/about/map.html">网站地图</a> |
+<a target="_blank" href="http://www.2cto.com/about/tg.html">作品发布</a> |
+<a target="_blank" href="http://vip.2cto.com/"><span style="COLOR: red">Vip技术培训</span></a>
+<br>
+<span class="style4">版权所有: <a href="http://www.2cto.com/" target="_blank">红黑联盟</a>--致力于做最好的IT技术学习网站<script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F1898984a3d796e86ad73ad1f4bc9f240' type='text/javascript'%3E%3C/script%3E"));
+</script><script src="./深入Log4J源码之LoggerRepository和Configurator - JAVA编程语言程序开发技术文章 - 红黑联盟_files/h.js" type="text/javascript"></script>    
+</span>
+</p></div>
+
+
+</body></html>
