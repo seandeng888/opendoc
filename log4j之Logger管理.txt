@@ -1,0 +1,740 @@
+
+/**
+ * Use the <code>LogManager</code> class to retreive {@link Logger}
+ * instances or to operate on the current {@link
+ * LoggerRepository}. When the <code>LogManager</code> class is loaded
+ * into memory the default initalzation procedure is inititated. The
+ * default intialization procedure</a> is described in the <a
+ * href="../../../../manual.html#defaultInit">short log4j manual</a>.
+ *
+ * @author Ceki G&uuml;lc&uuml; */
+public class LogManager {
+
+  /**
+   * @deprecated This variable is for internal use only. It will
+   * become package protected in future versions.
+   * */
+  static public final String DEFAULT_CONFIGURATION_FILE = "resources/resource/log4j.properties";
+  
+  /**
+   * @deprecated This variable is for internal use only. It will
+   * become package protected in future versions.
+   * */
+  static final String DEFAULT_XML_CONFIGURATION_FILE = "log4j.xml";  
+   
+  /**
+   * @deprecated This variable is for internal use only. It will
+   * become private in future versions.
+   * */
+  static final public String DEFAULT_CONFIGURATION_KEY="log4j.configuration";
+
+  /**
+   * @deprecated This variable is for internal use only. It will
+   * become private in future versions.
+   * */
+  static final public String CONFIGURATOR_CLASS_KEY="log4j.configuratorClass";
+
+  /**
+  * @deprecated This variable is for internal use only. It will
+  * become private in future versions.
+  */
+  public static final String DEFAULT_INIT_OVERRIDE_KEY = 
+                                                 "log4j.defaultInitOverride";
+
+    /**
+     * Concurrency guard.
+     */
+    private static Object guard = null;
+
+    /**
+     * The repository selector.
+     */
+    private static RepositorySelector repositorySelector;
+
+    /**
+     * The debug flag, false by default.
+     * True will cause debug printing to System.out.
+     * Modify via system property log4j.debug.
+     */
+    private static boolean debug = false;
+
+    /**
+     * The default LoggerRepository instance created by LogManager. This instance
+     * is provided for the convenience of the {@link RepositorySelector} instance.
+     * The selector, if it choses, may ignore this default repository.
+     */
+    public static final LoggerRepository defaultLoggerRepository;
+  
+
+    /**
+     * The following static initializer gets invoked immediately after a call to 
+     * Logger.getLogger() is made. Here is a description of the static initializer:
+     *
+     * - Create defaultLoggerRepository,
+     * - Configure(defaultLoggerRepository) depending on system properties,
+     *   during the configuration of defaultLoggerRepository a temporary repository 
+     *   selector is used.
+     */
+    static {
+            // Check debug
+            String debugProp = System.getProperty("log4j.debug");
+            if(Boolean.valueOf(debugProp).booleanValue()) {
+                debug = true;
+            }
+
+            if(debug) {
+                System.out.println("**Start of LogManager static initializer");
+            }
+
+            Hierarchy hierarchy =  new Hierarchy(new RootLogger(Level.DEBUG));
+            defaultLoggerRepository = hierarchy;
+            hierarchy.setName(Constants.DEFAULT_REPOSITORY_NAME);
+
+            // temporary repository
+            repositorySelector = new DefaultRepositorySelector(defaultLoggerRepository);
+
+            //  Attempt to perform automatic configuration of the default repository
+            String configuratorClassName =
+                    OptionConverter.getSystemProperty(Constants.CONFIGURATOR_CLASS_KEY, null);
+            String configurationOptionStr =
+                    OptionConverter.getSystemProperty(Constants.DEFAULT_CONFIGURATION_KEY, null);
+
+            if (configurationOptionStr == null) {
+                if (Loader.getResource(Constants.DEFAULT_XML_CONFIGURATION_FILE) != null) {
+                    configurationOptionStr = Constants.DEFAULT_XML_CONFIGURATION_FILE;
+                } else if (
+                        Loader.getResource(Constants.DEFAULT_CONFIGURATION_FILE) != null) {
+                    configurationOptionStr = Constants.DEFAULT_CONFIGURATION_FILE;
+                }
+            }
+        
+        if(debug) {
+            System.out.println("*** configurationOptionStr=" + configurationOptionStr);
+        }
+      
+        IntializationUtil.initialConfiguration(
+                                               defaultLoggerRepository, configurationOptionStr, configuratorClassName);
+        
+        String repositorySelectorStr = 
+            OptionConverter.getSystemProperty("log4j.repositorySelector", null);
+        
+        if (repositorySelectorStr == null) {
+            // NOTHING TO DO, the default repository has been configured already
+        } else if (repositorySelectorStr.equalsIgnoreCase("JNDI")) {
+            if(debug) {
+                System.out.println("*** Will use ContextJNDISelector **");
+            }
+
+            repositorySelector = new ContextJNDISelector();
+            guard = new Object();
+        } else {
+            Object r =
+                OptionConverter.instantiateByClassName(
+                                                       repositorySelectorStr, RepositorySelector.class, null);
+            
+            if (r instanceof RepositorySelector) {
+                if(debug) {
+                    System.out.println(
+                                       "*** Using [" + repositorySelectorStr
+                                       + "] instance as repository selector.");
+                }
+                repositorySelector = (RepositorySelector) r;
+                guard = new Object();
+            } else {
+                if(debug) {
+                    System.out.println(
+                                       "*** Could not insantiate [" + repositorySelectorStr
+                                       + "] as repository selector.");
+                    System.out.println("*** Using default repository selector");
+                }
+
+                repositorySelector = new DefaultRepositorySelector(defaultLoggerRepository);
+            }
+        }
+
+        if(debug) {
+            System.out.println("** End of LogManager static initializer");
+        }
+    }
+}
+
+RepositorySelector接口。
+/**
+ * The <code>LogManager</code> uses one (and only one) 
+ * <code>RepositorySelector</code> implementation to select the 
+ * {@link LoggerRepository} for a particular application context.
+ * 
+ * <p>It is the responsability of the <code>RepositorySelector</code> 
+ * implementation to track the application context. Log4j makes no assumptions 
+ * about the application context or on its management.
+ * 
+ * <p>See also {@link org.apache.log4j.LogManager LogManager}.
+ * 
+ * @author Ceki G&uuml;lc&uuml;
+ * @since 1.2
+ * */
+public interface RepositorySelector {
+
+  /**
+   * Returns a {@link LoggerRepository} depending on the context. Implementors 
+   * must make sure that under all circumstances a valid (non-null) 
+   * LoggerRepository is returned.
+  */
+  public LoggerRepository getLoggerRepository();
+}
+
+继承RepositorySelector的接口。
+/**
+ * The <code>LogManager</code> uses one (and only one)
+ * <code>RepositorySelector</code> implementation to select the
+ * {@link LoggerRepository} for a particular application context.
+ *
+ * <p>It is the responsability of the <code>RepositorySelector</code>
+ * implementation to track the application context. Log4j makes no assumptions
+ * about the application context or on its management.
+ *
+ * <p>See also {@link org.apache.log4j.LogManager LogManager}.
+ *
+ * @author Ceki G&uuml;lc&uuml;
+ * @since 1.3
+ * */
+public interface RepositorySelectorEx extends RepositorySelector {
+  /**
+   * Remove the repository with the given name from the list maintained by the
+   * respository selector.
+   *
+   * <p>When applications are stopped or recycled, this method should be called
+   * to ensure that the associated repository is recycled as well. After the
+   * repository is detached from this selector, the returned value, i.e. the
+   * detached repository, can be used to shutdown the repository.
+   *
+   * <p>If more than one application share the same logging context, then the
+   * applications need to coordinate their actions.
+   *
+   * @return The LoggerRepository instance that was detached.
+   * @since 1.3
+   */
+  LoggerRepository detachRepository(String name);
+}
+
+RepositorySelectorEx的实现类。
+/**
+ * Trivial implementation of RepositorySelectorEx which takes
+ * a fixed repository.
+ */
+public class DefaultRepositorySelector implements RepositorySelectorEx {
+  
+  private LoggerRepository defaultRepository;
+
+  /**
+   * Constructs a new instance.
+   * @param repository cannot be null
+   */
+  public DefaultRepositorySelector(final LoggerRepository repository) {
+    if (repository == null)
+      throw new NullPointerException();
+    this.defaultRepository = repository;
+  }
+
+  public LoggerRepository getLoggerRepository() {
+    return defaultRepository;
+  }
+  
+  /**
+   * Does nothing, always returns null.
+   * 
+   * @return Always null
+   */
+  public LoggerRepository detachRepository(final String name) {
+    // do nothing, as the default repository cannot be removed
+    return null;
+  }
+}
+
+LoggerRepository类
+
+/**
+   A <code>LoggerRepository</code> is used to create and retrieve
+   <code>Loggers</code>. The relation between loggers in a repository
+   depends on the repository but typically loggers are arranged in a
+   named hierarchy.
+
+   <p>In addition to the creational methods, a
+   <code>LoggerRepository</code> can be queried for existing loggers,
+   can act as a point of registry for events related to loggers.
+
+   @author Ceki G&uuml;lc&uuml;
+   @since 1.2 */
+public interface LoggerRepository {
+  /**
+     Add a {@link HierarchyEventListener} event to the repository.
+     @deprecated Superceded by LoggerRepositoryEx.addLoggerEventListener.
+  */
+  public void addHierarchyEventListener(HierarchyEventListener listener);
+
+  /**
+     Returns whether this repository is disabled for a given
+     level. The answer depends on the repository threshold and the
+     <code>level</code> parameter. See also {@link #setThreshold}
+     method.  */
+  boolean isDisabled(int level);
+
+  /**
+     Set the repository-wide threshold. All logging requests below the
+     threshold are immediately dropped. By default, the threshold is
+     set to <code>Level.ALL</code> which has the lowest possible rank.  */
+  public void setThreshold(Level level);
+
+  /**
+      Another form of {@link #setThreshold(Level)} accepting a string
+      parameter instead of a <code>Level</code>. */
+  public void setThreshold(String val);
+
+  public void emitNoAppenderWarning(Category cat);
+
+  /**
+     Get the repository-wide threshold. See {@link
+     #setThreshold(Level)} for an explanation. */
+  public Level getThreshold();
+
+  public Logger getLogger(String name);
+
+  public Logger getLogger(String name, LoggerFactory factory);
+
+  public Logger getRootLogger();
+
+  public abstract Logger exists(String name);
+
+  public abstract void shutdown();
+
+  public Enumeration getCurrentLoggers();
+
+  /**
+     Deprecated. Please use {@link #getCurrentLoggers} instead.  */
+  public Enumeration getCurrentCategories();
+
+  public abstract void fireAddAppenderEvent(
+    Category logger, Appender appender);
+
+  public abstract void resetConfiguration();
+}
+继承LoggerRepository的接口。
+
+/**
+   A <code>LoggerRepository</code> is used to create and retrieve
+   <code>Loggers</code>. The relation between loggers in a repository
+   depends on the repository but typically loggers are arranged in a
+   named hierarchy.
+
+   <p>In addition to the creational methods, a
+   <code>LoggerRepository</code> can be queried for existing loggers,
+   can act as a point of registry for events related to loggers.
+
+   @author Ceki G&uuml;lc&uuml;
+   @author Mark Womack
+   @author Curt Arnold
+   @since 1.3 */
+public interface LoggerRepositoryEx extends LoggerRepository {
+  /**
+    Add a {@link LoggerRepositoryEventListener} to the repository. The
+    listener will be called when repository events occur.
+     @param listener event listener, may not be null.
+    @since 1.3*/
+  void addLoggerRepositoryEventListener(
+    LoggerRepositoryEventListener listener);
+
+  /**
+    Remove a {@link LoggerRepositoryEventListener} from the repository.
+   @param listener listener.
+    @since 1.3*/
+  void removeLoggerRepositoryEventListener(
+    LoggerRepositoryEventListener listener);
+
+  /**
+    Add a {@link LoggerEventListener} to the repository. The  listener
+    will be called when repository events occur.
+   @param listener listener, may not be null.
+    @since 1.3*/
+  void addLoggerEventListener(LoggerEventListener listener);
+
+  /**
+    Remove a {@link LoggerEventListener} from the repository.
+   @param listener listener, may not be null.
+    @since 1.3*/
+  void removeLoggerEventListener(LoggerEventListener listener);
+
+  /**
+   * Get the name of this logger repository.
+   * @return name, may not be null.
+   * @since 1.3
+   */
+  String getName();
+
+  /**
+   * A logger repository is a named entity.
+   * @param repoName new name, may not be null.
+   * @since 1.3
+   */
+  void setName(String repoName);
+
+  /**
+   * Is the current configuration of the repository in its original (pristine)
+   * state?
+   * @return true if repository is in original state.
+   *
+   * @since 1.3
+   */
+  boolean isPristine();
+
+  /**
+   *  Set the pristine flag.
+   * @param state state
+   *  @see #isPristine
+   *  @since 1.3
+   */
+  void setPristine(boolean state);
+
+  /**
+    Requests that a appender removed event be sent to any registered
+    {@link LoggerEventListener}.
+    @param logger The logger from which the appender was removed.
+    @param appender The appender removed from the logger.
+    @since 1.3*/
+  void fireRemoveAppenderEvent(Category logger, Appender appender);
+
+  /**
+    Requests that a level changed event be sent to any registered
+    {@link LoggerEventListener}.
+    @param logger The logger which changed levels.
+    @since 1.3*/
+  void fireLevelChangedEvent(Logger logger);
+
+  /**
+    Requests that a configuration changed event be sent to any registered
+    {@link LoggerRepositoryEventListener}.
+    @since 1.3*/
+  void fireConfigurationChangedEvent();
+
+  /**
+   * Return the PluginRegisty for this LoggerRepository.
+   * @return plug in registry.
+   * @since 1.3
+   */
+  PluginRegistry getPluginRegistry();
+
+  /**
+   * Return the {@link Scheduler} for this LoggerRepository.
+   * @return scheduler.
+   * @since 1.3
+   */
+  Scheduler getScheduler();
+
+  /**
+   * Get the properties specific for this repository.
+   * @return property map.
+   * @since 1.3
+   */
+  Map getProperties();
+
+  /**
+   * Get the property of this repository.
+   * @param key property key.
+   * @return key value or null if not set.
+   * @since 1.3
+   */
+  String getProperty(String key);
+
+  /**
+   * Set a property of this repository.
+   * @param key key, may not be null.
+   * @param value new value, if null, property will be removed.
+   * @since 1.3
+   */
+  void setProperty(String key, String value);
+
+  /**
+   * Errors which cannot be logged, go to the error list.
+   *
+   * @return List
+   */
+  List getErrorList();
+
+  /**
+   * Errors which cannot be logged, go to the error list.
+   *
+   * @param errorItem an ErrorItem to add to the error list
+   */
+  void addErrorItem(ErrorItem errorItem);
+
+  /**
+   * A LoggerRepository can also act as a store for various objects used
+   * by log4j components.
+   *
+   * @param key key, may not be null.
+   * @return The object stored under 'key'.
+   * @since 1.3
+   */
+  Object getObject(String key);
+
+  /**
+   * Store an object under 'key'. If no object can be found, null is returned.
+   *
+   * @param key key, may not be null.
+   * @param value value, may be null.
+   */
+  void putObject(String key, Object value);
+
+  /**
+   * Sets the logger factory used by {@link LoggerRepository#getLogger(String)}.
+   * @param loggerFactory factory to use, may not be null
+   * @since 1.3
+   */
+  void setLoggerFactory(LoggerFactory loggerFactory);
+
+  /**
+   * Returns the logger factory used by
+   * {@link LoggerRepository#getLogger(String)}.
+   *
+   * @return non-null factory
+   * @since 1.3
+   */
+  LoggerFactory getLoggerFactory();
+}
+
+实现LoggerRepositoryEx的类
+
+/**
+   This class is specialized in retrieving loggers by name and also
+   maintaining the logger hierarchy.
+
+   <p><em>The casual user does not have to deal with this class
+   directly.</em>
+
+   <p>The structure of the logger hierarchy is maintained by the
+   {@link #getLogger} method. The hierarchy is such that children link
+   to their parent but parents do not have any pointers to their
+   children. Moreover, loggers can be instantiated in any order, in
+   particular descendant before ancestor.
+
+   <p>In case a descendant is created before a particular ancestor,
+   then it creates a provision node for the ancestor and adds itself
+   to the provision node. Other descendants of the same ancestor add
+   themselves to the previously created provision node.
+
+   @author Ceki G&uuml;lc&uuml;
+   @author Mark Womack
+
+*/
+public class Hierarchy implements LoggerRepositoryEx, RendererSupport {
+
+    /**
+     * Logger factory.
+     */
+  private LoggerFactory loggerFactory;
+    /**
+     * List of repository event listeners.
+     */
+  private final ArrayList repositoryEventListeners;
+    /**
+     * List of logger event listeners.
+     */
+  private final ArrayList loggerEventListeners;
+    /**
+     * Name of hierarchy.
+     */
+  String name;
+    /**
+     * Loggers by name.
+     */
+  Hashtable ht;
+    /**
+     * Root logger.
+     */
+  Logger root;
+  /**
+     Constructs a new logger hierarchy.
+
+     @param rootLogger The root of the new hierarchy.
+
+   */
+  public Hierarchy(final Logger rootLogger) {
+    ht = new Hashtable();
+    repositoryEventListeners = new ArrayList(1);
+    loggerEventListeners = new ArrayList(1);
+    this.root = rootLogger;
+    this.objectMap = new HashMap();
+    // Enable all level levels by default.
+    setThreshold(Level.ALL);
+    this.root.setHierarchy(this);
+    rendererMap = new RendererMap();
+    rendererMap.setLoggerRepository(this);
+    properties = new Hashtable();
+    loggerFactory = new DefaultLoggerFactory();
+  }
+}
+
+RootLogger类
+
+/**
+   RootLogger sits at the top of the category hierachy. It is a
+   regular logger except that it provides several guarantees.
+
+   <p>First, it cannot be assigned a <code>null</code>
+   level. Second, since root logger cannot have a parent, the
+   {@link #getChainedLevel} method always returns the value of the
+   level field without walking the hierarchy.
+
+   @author Ceki G&uuml;lc&uuml;
+
+ */
+public final class RootLogger extends Logger {  
+  /**
+   * Constructs using a level.
+   * The root category names itself as "root". However, the root
+   * category cannot be retrieved by name.
+  */
+  public RootLogger(Level level) {
+    super("root");
+    setLevel(level);
+  }
+  
+  /**
+     Setting a null value to the level of the root logger may have catastrophic
+     results. We prevent this here.
+
+     @since 0.8.3 */
+  public final void setLevel(Level level) {
+    if (level == null) {
+      if (repository instanceof LoggerRepositoryEx) {
+        ((LoggerRepositoryEx) repository).addErrorItem(
+          new ErrorItem(
+            "You have tried to set a null level to root.", new Exception()));
+      }
+    } else {
+      this.level = level;
+    }
+  }
+}
+
+LoggerFactory类
+/**
+
+  Implement this interface to create new instances of Logger or
+  a sub-class of Logger.
+
+  <p>See <code>examples/subclass/MyLogger.java</code> for an example.
+
+  @author Ceki G&uuml;lc&uuml;
+  @since version 0.8.5
+
+ */
+public interface LoggerFactory {
+  public Logger makeNewLoggerInstance(String name);
+}
+
+LoggerFactory实现类DefaultLoggerFactory
+
+/**
+ * Factory class that returns new {@link Logger} instances.
+ */
+public final class DefaultLoggerFactory implements LoggerFactory {
+  public DefaultLoggerFactory() {}
+
+  /**
+   * Returns a new {@link Logger} instance.
+   */
+  public Logger makeNewLoggerInstance(String name) {
+    return new Logger(name);
+  }
+}
+
+Configurator类
+
+/**
+   Implemented by classes capable of configuring log4j using a URL.
+
+   @since 1.0
+   @author Anders Kristensen
+ */
+public interface Configurator {
+}
+
+
+Configurator实现类ConfiguratorBase类。
+
+/**
+ * Code useful to most configurators.
+ *  
+ * @author Ceki Gulcu
+ * @since 1.3
+ */
+abstract public class ConfiguratorBase implements Configurator {
+}
+
+ConfiguratorBase实现类PropertyConfigurator类。
+/**
+   Allows the configuration of log4j from an external file.  See
+   <b>{@link #doConfigure(String, LoggerRepository)}</b> for the
+   expected format.
+
+   <p>It is sometimes useful to see how log4j is reading configuration
+   files. You can enable log4j internal logging by defining the
+   <b>log4j.debug</b> variable.
+
+   <P>As of log4j version 0.8.5, at class initialization time class,
+   the file <b>log4j.properties</b> will be searched from the search
+   path used to load classes. If the file can be found, then it will
+   be fed to the {@link PropertyConfigurator#configure(java.net.URL)}
+   method.
+
+   <p>The <code>PropertyConfigurator</code> does not handle the
+   advanced configuration features supported by the {@link
+   org.apache.log4j.xml.DOMConfigurator DOMConfigurator} such as
+   support for {@link org.apache.log4j.spi.Filter Filters}, nested
+   appenders such as the {@link org.apache.log4j.AsyncAppender
+   AsyncAppender}, etc.
+
+   <p>All option <em>values</em> admit variable substitution. The
+   syntax of variable substitution is similar to that of Unix
+   shells. The string between an opening <b>&quot;${&quot;</b> and
+   closing <b>&quot;}&quot;</b> is interpreted as a key. The value of
+   the substituted variable can be defined as a system property or in
+   the configuration file itself. The value of the key is first
+   searched in the system properties, and if not found there, it is
+   then searched in the configuration file being parsed.  The
+   corresponding value replaces the ${variableName} sequence. For
+   example, if <code>java.home</code> system property is set to
+   <code>/home/xyz</code>, then every occurrence of the sequence
+   <code>${java.home}</code> will be interpreted as
+   <code>/home/xyz</code>.
+
+
+   @author Ceki G&uuml;lc&uuml;
+   @author Anders Kristensen
+   @since 0.8.1 */
+public class PropertyConfigurator extends ConfiguratorBase
+    implements ConfiguratorEx {
+  static final String CATEGORY_PREFIX = "log4j.category.";
+  static final String LOGGER_PREFIX = "log4j.logger.";
+  static final String FACTORY_PREFIX = "log4j.factory";
+  static final String ADDITIVITY_PREFIX = "log4j.additivity.";
+  static final String ROOT_CATEGORY_PREFIX = "log4j.rootCategory";
+  static final String ROOT_LOGGER_PREFIX = "log4j.rootLogger";
+  static final String APPENDER_PREFIX = "log4j.appender.";
+  static final String RENDERER_PREFIX = "log4j.renderer.";
+  static final String THRESHOLD_PREFIX = "log4j.threshold";
+}
+
+
+ConfiguratorBase实现类JoranConfigurator类。
+/**
+ *
+ * A JoranConfigurator instance should not be used more than once to
+ * configure a LoggerRepository.
+ *
+ * @author Curt Arnold
+ * @author <a href="http://www.qos.ch/log4j/">Ceki G&uuml;lc&uuml;</a>
+ */
+public class JoranConfigurator extends ConfiguratorBase
+    implements ConfiguratorEx {
+}
